@@ -31,7 +31,7 @@ begin
         	data_in     => port_A(7 downto 0),
         	data_out    => data_from_crypto_1,
         	data_av     => port_A(14),
-        	keyExchange => port_B(13), --ambos vem de PortB
+        	keyExchange => port_B(13), --ambos vem de Port_B
         	eom         => port_A(12)
     	);
     
