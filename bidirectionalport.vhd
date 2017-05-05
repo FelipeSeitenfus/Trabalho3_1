@@ -16,7 +16,7 @@ entity BidirectionalPort  is
         data_i      : in std_logic_vector (DATA_WIDTH-1 downto 0);
         data_o      : out std_logic_vector (DATA_WIDTH-1 downto 0);
         address     : in std_logic_vector (1 downto 0);		-- NÃO ALTERAR!
-		irq			: out std_logic_vector (1 downto 0);
+	irq	    : out std_logic_vector (1 downto 0);
         rw          : in std_logic; -- 0: read; 1: write
         ce          : in std_logic;
         
