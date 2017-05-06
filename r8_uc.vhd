@@ -61,7 +61,8 @@ begin
         DATA_WIDTH          => 16,    						-- Port width in bits
         PORT_DATA_ADDR      => "00",    
         PORT_CONFIG_ADDR    => "01",     
-        PORT_ENABLE_ADDR    => "10"     
+        PORT_ENABLE_ADDR    => "10",
+	PORT_IRQ_ENABLE_ADDR => "11"
         )
     port map(
         clk => clk, -- nclk?
@@ -81,7 +82,8 @@ begin
         DATA_WIDTH          => 16,    						-- Port width in bits
         PORT_DATA_ADDR      => "00",    
         PORT_CONFIG_ADDR    => "01",     
-        PORT_ENABLE_ADDR    => "10"     
+        PORT_ENABLE_ADDR    => "10",
+	PORT_IRQ_ENABLE_ADDR => "11"
         )
     port map(
         clk => clk, 
