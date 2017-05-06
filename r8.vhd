@@ -85,7 +85,7 @@ architecture behavioral of R8 is
     signal multiply : std_logic_vector(31 downto 0);
     signal division : std_logic_vector(31 downto 0);
     signal high, low: std_logic_vector(15 downto 0);
-    --signal interruptReg: std_logic_vector;
+    --signal interruptReg: std_logic;
 	-- Register file
     type RegisterArray is array (natural range <>) of std_logic_vector(15 downto 0);
     signal registerFile: RegisterArray(0 to 15);	
@@ -181,8 +181,11 @@ begin
                 registerFile(i) <= (others=>'0');  
             end loop;
         elsif rising_edge(clk) then -- sensivel a borda de subida do clock
-            case currentState is
-				when Sidle =>  
+            if interruptReg /= '1' then
+		interruptReg <= intr;
+	    end if;
+	case currentState is
+		when Sidle =>  
                     currentState <= Sfetch; 
                 
                 when Sfetch => -- busca da instrucao
