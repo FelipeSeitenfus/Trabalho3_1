@@ -28,7 +28,10 @@ architecture behavioral of R8_uC is
     signal interrupt_PortB : std_logic_vector(15 downto 0);
 	
 begin  
-    PROCESSOR: entity work.R8                -- processor
+    PROCESSOR: entity work.R8                -- processor  
+    generic map(
+        INTERRUPT_ADDRESS => x"0015"
+    )
     port map (
         clk         => clk, 
         rst         => rst, 
@@ -44,7 +47,8 @@ begin
     generic map (
         SIZE         => 1024,    -- 1024 words (2KB)
         --imageFileName => "Todas_Instrucoes_R8.txt"
-        imageFileName => "crypto.txt"
+        --imageFileName => "crypto.txt"             
+        imageFileName => "testa_Port_Interrupt.txt"
         
         )
     port map (
@@ -117,7 +121,7 @@ begin
     wr <= not rw;
     enableMemory <= '0' when (ce = '1' and addressR8(15) = '0') else '1';
     dataBus <= dataFromR8 when (enableMemory = '0' and rw = '0') else (others => 'Z');
-    -- interrupÃ§Ã£o: port_B(10) e port_A(10) indicam a interrupÃ§Ã£o
+    -- interrupção: port_B(10) e port_A(10) indicam a interrupção
     interruption <= interrupt_PortB(0) or interrupt_PortB(1) or interrupt_PortB(2) or interrupt_PortB(3) or interrupt_PortB(4) or interrupt_PortB(5) or interrupt_PortB(6) or interrupt_PortB(7)
 	    	    or interrupt_PortB(8) or interrupt_PortB(9) or interrupt_PortB(10) or interrupt_PortB(11) or interrupt_PortB(12) or interrupt_PortB(13) or interrupt_PortB(14) or interrupt_PortB(15);
 end behavioral;

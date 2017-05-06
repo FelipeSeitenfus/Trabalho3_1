@@ -56,7 +56,7 @@ end R8;
 architecture behavioral of R8 is   
 
     type InstructionType is (Format1, Format2, other);
-	signal instType : InstructionType; -- Tipo da instruÃ§Ã£o
+	signal instType : InstructionType; -- Tipo da instrução
 	type State  is (Sidle, Sfetch, Sreg, Shalt, Salu, Srts, Spop, Sldsp, 
 			Sld, Sst, Swbk, Sjmp, Ssbrt, Spush, Smul, Sdiv, Smfh, Smfl,
 		        SpushF, SpopF, Srti, Sinterrupt); 
@@ -77,9 +77,9 @@ architecture behavioral of R8 is
 	signal RA: std_logic_vector(15 downto 0); -- Registrador que guarda o primeiro registrador lido do registerFile
 	signal RB: std_logic_vector(15 downto 0); -- Registrador que guarda o segundo registrador lido do registerFile
 	signal RULA: std_logic_vector(15 downto 0); -- Registrador que guarda o valor da ULA
-	signal S1: std_logic_vector(15 downto 0); -- primeira saÃ­da do registerFile
-	signal S2: std_logic_vector(15 downto 0); -- segunda saÃ­da do registerFile
-	signal adder: std_logic_vector(16 downto 0); -- somador para realizar as operaÃ§Ãµes de soma e subtraÃ§Ã£o
+	signal S1: std_logic_vector(15 downto 0); -- primeira saída do registerFile
+	signal S2: std_logic_vector(15 downto 0); -- segunda saída do registerFile
+	signal adder: std_logic_vector(16 downto 0); -- somador para realizar as operações de soma e subtração
 	signal outula: std_logic_vector(15 downto 0); -- saida da ULA
     signal opA, opB: std_logic_vector(15 downto 0); -- operadores da ULA
 	signal op1_adder, op2_adder: std_logic_vector(15 downto 0); -- operadores do somador
@@ -202,7 +202,7 @@ begin
                     if interruptReg = '1' and atendendo_interrupcao = false then
                         atendendo_interrupcao <= true;
                         currentState <= Sinterrupt;
-                    else -- salto para a interrupÃ§ao
+                    else -- salto para a interrupçao
                     	PC <= PC + 1; -- PC++
                         IR <= data_in; -- IR <= MEM(PC)
                         currentState <= Sreg;
@@ -265,40 +265,40 @@ begin
         				currentState <= Sfetch;   
         			end if;     
                     
-        		when Swbk => -- ciclo final para as intruÃ§Ãµes logicas/aritmÃ©ticas (write back)
+        		when Swbk => -- ciclo final para as intruções logicas/aritméticas (write back)
         			registerFile(TO_INTEGER(UNSIGNED(IR(11 downto 8)))) <= dtReg; -- regFile(i) <= RULA
         			currentState <= Sfetch;
                     
-        		when Sld => -- ciclo final para a instruÃ§Ã£o de load (escrita do valor lido na memÃ³ria)
+        		when Sld => -- ciclo final para a instrução de load (escrita do valor lido na memória)
         			registerFile(TO_INTEGER(UNSIGNED(IR(11 downto 8)))) <= dtReg; -- regFile(i) <= MEM(RULA)
         			currentState <= Sfetch;
                     
-        		when Sst => -- ciclo final para a instruÃ§Ã£o de store (escrita do valor na memÃ³ria)
+        		when Sst => -- ciclo final para a instrução de store (escrita do valor na memória)
                     currentState <= Sfetch;
                 
-        		when Sldsp => -- ciclo final para a instruÃ§Ã£o de load para o stack pointer (escrita do valor no SP)
+        		when Sldsp => -- ciclo final para a instrução de load para o stack pointer (escrita do valor no SP)
         			currentState <= Sfetch;
         			SP <= RULA; -- SP <= RegFile(i)
                     
-        		when Spush => -- ciclo final para a instruÃ§Ã£o de push (colocar dado na pilha e decrementar SP)
+        		when Spush => -- ciclo final para a instrução de push (colocar dado na pilha e decrementar SP)
         			SP <= SP - 1;
         			currentState <= Sfetch;
                     
-                when Spop => -- ciclo final para a instruÃ§Ã£o de pop (retirar dado da pilha e incrementar SP)
+                when Spop => -- ciclo final para a instrução de pop (retirar dado da pilha e incrementar SP)
         			SP <= RULA; -- SP++
         			registerFile(TO_INTEGER(UNSIGNED(IR(11 downto 8)))) <= dtReg; -- regFile(i) <= MEM(SP)
         			currentState <= Sfetch;
                     
-        		when Ssbrt => -- ciclo final para as instruÃ§Ãµes de subrotina (colocar PC na pilha e saltar)
-        			PC <= RULA; -- atualiza o PC com o novo endereÃ§o
+        		when Ssbrt => -- ciclo final para as instruções de subrotina (colocar PC na pilha e saltar)
+        			PC <= RULA; -- atualiza o PC com o novo endereço
         			SP <= SP - 1;
         			currentState <= Sfetch;
                     
-        		when Sjmp => -- ciclo final para as instruÃ§Ãµes de salto (saltar para o endereÃ§o especificado)
+        		when Sjmp => -- ciclo final para as instruções de salto (saltar para o endereço especificado)
         			PC <= RULA; -- atualiza PC
         			currentState <= Sfetch;
                     
-        		when Srts => -- ciclo final para a instruÃ§Ã£o de retorno de subrotina (recuperar pc da pilha e incrementar SP)
+        		when Srts => -- ciclo final para a instrução de retorno de subrotina (recuperar pc da pilha e incrementar SP)
         			SP <= RULA; -- SP++
         			PC <= data_in; -- PC recuperado da pilha
         			currentState <= Sfetch; 
@@ -347,8 +347,8 @@ begin
         end if;
     end process;		
 	
-	-- seleciona o destino do dado que serÃ¡ escrito no banco de registradores
-	dtReg <= data_in when decodedInstruction = LD or decodedInstruction = POP or decodedInstruction = POPF else -- dado da memÃ³ria
+	-- seleciona o destino do dado que será escrito no banco de registradores
+	dtReg <= data_in when decodedInstruction = LD or decodedInstruction = POP or decodedInstruction = POPF else -- dado da memória
 		     RULA; -- dado da ULA
 	
 	
@@ -376,7 +376,7 @@ begin
 	adder <= ('0' & op1_adder) + ('0' & op2_adder); -- ADD/SUB/SUBI/LD/ST/JSRD/JUMP_D
 	
 	-- Operandos da ULA
-	opA <= IR when instType = Format2 or decodedInstruction = JUMP_D or decodedInstruction = JSRD else -- constante imediata que estÃ¡ nos bits menos significativos do IR
+	opA <= IR when instType = Format2 or decodedInstruction = JUMP_D or decodedInstruction = JSRD else -- constante imediata que está nos bits menos significativos do IR
 		   RA; -- registrador lido
 		   
 	-- escolhe o segundo operando da ULA
@@ -390,10 +390,10 @@ begin
 				opA xor opB when decodedInstruction = XXOR else 								-- XOR
 				opA and opB when decodedInstruction = AAND else 								-- AND
 				opA or opB when decodedInstruction = OOR else 									-- OR
-				opA(14 downto 0) & '0' when decodedInstruction = SL0   else  					-- shift left 1 posiÃ§Ã£o para a esquerda inserindo 0 no bit 0
-				opA(14 downto 0) & '1' when decodedInstruction = SL1   else  					-- shift left 1 posiÃ§Ã£o para a esquerda inserindo 1 no bit 0
-				'0' & opA(15 downto 1) when decodedInstruction = SR0   else	 					-- shift right 1 posiÃ§Ã£o para a direita inserindo 0 no bit 15
-				'1' & opA(15 downto 1) when decodedInstruction = SR1   else						-- shift right 1 posiÃ§Ã£o para a direita inserindo 0 no bit 15
+				opA(14 downto 0) & '0' when decodedInstruction = SL0   else  					-- shift left 1 posição para a esquerda inserindo 0 no bit 0
+				opA(14 downto 0) & '1' when decodedInstruction = SL1   else  					-- shift left 1 posição para a esquerda inserindo 1 no bit 0
+				'0' & opA(15 downto 1) when decodedInstruction = SR0   else	 					-- shift right 1 posição para a direita inserindo 0 no bit 15
+				'1' & opA(15 downto 1) when decodedInstruction = SR1   else						-- shift right 1 posição para a direita inserindo 0 no bit 15
 				not opA                when decodedInstruction = NOT_A  else					-- NOT 
 				STD_LOGIC_VECTOR(UNSIGNED(opB) + 1)	when decodedInstruction = RTS or decodedInstruction = POP or decodedInstruction = RTI else   									-- Incrementa o SP para POP e RTS
 				opA                               	when decodedInstruction = JUMP_A or decodedInstruction = JSR  or decodedInstruction = LDSP else		-- bypass para jump absoluto, salto de subrotina ou carregamento de SP
@@ -419,8 +419,8 @@ begin
 	-- Memory
     
 	-- Memory Address
-	address <= PC when currentState = Sfetch else -- Busca da instruÃ§ao
-			   RULA when currentState = Sld or currentState = Sst or currentState = Spop or currentState = Srts else -- LD/ST/RTS/POP
+	address <= PC when currentState = Sfetch else -- Busca da instruçao
+			   RULA when currentState = Sld or currentState = Sst or currentState = Spop or currentState = Srts or currentState = Srti else -- LD/ST/RTS/POP
 		       SP + 1 when currentState = SpopF else	
 		       SP; -- PUSH or PUSHF or Sinterrupt
 			   
@@ -436,6 +436,6 @@ begin
            currentState = Spush or currentState = Spushf or currentState = Sst or
 		   currentState = Sinterrupt) else '0';
 		   
-    rw <= '1' when (currentState = Sfetch or currentState = Srts or currentState = Spop or 
-           currentState = Spopf or currentState = Sld) else '0';
+    rw <= '1' when (currentState = Sfetch or currentState = Srts or currentState = Srti 
+		  or currentState = Spop or currentState = Spopf or currentState = Sld) else '0';
 end behavioral;

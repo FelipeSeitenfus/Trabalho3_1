@@ -4,9 +4,9 @@ use IEEE.std_logic_1164.all;
 entity BidirectionalPort  is
     generic (
         DATA_WIDTH          : integer;    -- Port width in bits
-        PORT_DATA_ADDR      : std_logic_vector(1 downto 0);     -- Nﾃグ ALTERAR!
-        PORT_CONFIG_ADDR    : std_logic_vector(1 downto 0);     -- Nﾃグ ALTERAR! 
-        PORT_ENABLE_ADDR    : std_logic_vector(1 downto 0);      -- Nﾃグ ALTERAR!
+        PORT_DATA_ADDR      : std_logic_vector(1 downto 0);     -- NﾃO ALTERAR!
+        PORT_CONFIG_ADDR    : std_logic_vector(1 downto 0);     -- NﾃO ALTERAR! 
+        PORT_ENABLE_ADDR    : std_logic_vector(1 downto 0);      -- NﾃO ALTERAR!
 	PORT_IRQ_ENABLE_ADDR : std_logic_vector(1 downto 0)
     );
     port (  
@@ -16,14 +16,14 @@ entity BidirectionalPort  is
         -- Processor interface
         data_i      : in std_logic_vector (DATA_WIDTH-1 downto 0);
         data_o      : out std_logic_vector (DATA_WIDTH-1 downto 0);
-        address     : in std_logic_vector (1 downto 0);		-- Nﾃグ ALTERAR
+        address     : in std_logic_vector (1 downto 0);		-- NﾃO ALTERAR
         rw          : in std_logic; -- 0: read; 1: write
         ce          : in std_logic;
         
         -- External interface
         port_io     : inout std_logic_vector (DATA_WIDTH-1 downto 0);
-	-- Vetor de interrupﾃｧﾃ｣o
-	irq	    : out std_logic_vector (DATA_WIDTH-1 downto 0)
+	    -- Vetor de interrup鈬o
+	    irq	    : out std_logic_vector (DATA_WIDTH-1 downto 0)
     );
 end BidirectionalPort ;
 
@@ -42,12 +42,10 @@ begin
 			synch <= (others => '0');
 		elsif rising_edge(clk) then
 			synch <= synch_in;
-			--if(address = PORT_DATA_ADDR and ce = '1') then
-				--PortData <= PortData_In;
             for i in 0 to DATA_WIDTH-1 loop
                 if((ce = '1' and rw = '1' and address = PORT_DATA_ADDR) or (PortEnable(i) = '1' and PortConfig(i) = '1')) then
                     PortData(i) <= PortData_In(i); 
-                end if;
+                end if; 
             end loop;
 			if (address = PORT_CONFIG_ADDR and ce = '1' and rw = '1') then
 				PortConfig <= data_i;
@@ -60,15 +58,13 @@ begin
 	end process;
 	   
     COMBINATIONAL: for i in 0 to DATA_WIDTH-1 generate
-	irq(i) <= PortData(i) and PortEnable(i) and PortConfig(i) and irqEnable(i);
+	    irq(i) <= PortData(i) and PortEnable(i) and PortConfig(i) and irqEnable(i);
         port_io(i) <= PortData(i) when PortConfig(i) = '0' and PortEnable(i) = '1' else 'Z';
         PortData_In(i) <= synch(i) when PortConfig(i) = '1' and PortEnable(i) = '1' else data_i(i);
         synch_in(i) <= port_io(i) when PortConfig(i) = '1' and PortEnable(i) = '1' else 'Z';
     end generate COMBINATIONAL;
 	
-	
 	data_o <= PortData when address = PORT_DATA_ADDR else
 			  PortConfig when address = PORT_CONFIG_ADDR else
 			  PortEnable;
 end Behavioral;
-	
