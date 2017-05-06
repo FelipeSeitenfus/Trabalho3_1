@@ -42,7 +42,6 @@ begin
 			synch <= (others => '0');
 		elsif rising_edge(clk) then
 			synch <= synch_in;
-			irqEnable <= data_i;
 			--if(address = PORT_DATA_ADDR and ce = '1') then
 				--PortData <= PortData_In;
             for i in 0 to DATA_WIDTH-1 loop
@@ -54,6 +53,8 @@ begin
 				PortConfig <= data_i;
 			elsif (address = PORT_ENABLE_ADDR and ce = '1' and rw = '1') then
 				PortEnable <= data_i;
+			elsif (address = PORT_IRQ_ENABLE_ADDR and ce = '1' and rw = '1') the
+				irqEnable <= data_i;
 			end if;
 		end if;
 	end process;
