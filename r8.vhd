@@ -190,8 +190,8 @@ begin
 					IR <= data_in; -- IR <= MEM(PC)
 					if decodedInstruction = PUSHF then
 				 		currentState <= Spushf; 
-				 	elsif decodedInstruction = RTI then
-				 		currentState <= Srti;
+				 	elsif decodedInstruction = POPF then
+				 		currentState <= Spopf;
 					else
 				 		currentState <= Sreg;
 				 	end if;
@@ -223,6 +223,8 @@ begin
 						currentState <= Spop;
 					elsif decodedInstruction = RTS then   
 						currentState <= Srts;
+				 	elsif decodedInstruction = RTI then
+				 		currentState <= Srti;
 					elsif decodedInstruction = LDSP then   
 						currentState <= Sldsp;
 					elsif decodedInstruction = LD then   
