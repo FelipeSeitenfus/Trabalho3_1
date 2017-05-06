@@ -153,6 +153,9 @@ begin
 
                             JSRR  when ir(15 downto 12) = x"C" and ir(3 downto 0) = x"A" else
                             JSR   when ir(15 downto 12) = x"C" and ir(3 downto 0) = x"B" else
+			    PUSHF when ir(15 downto 12) = x"C" and ir(3 downto 0) = x"C" else
+			    POPF  when ir(15 downto 12) = x"C" and ir(3 downto 0) = x"D" else
+			    RTI   when ir(15 downto 12) = x"C" and ir(3 downto 0) = x"E" else
                             JSRD  when ir(15 downto 12) = x"F" else
 
                             NOP ;   -- IMPORTANT: default condition in case of conditional jumps with corresponding flags = '0';
