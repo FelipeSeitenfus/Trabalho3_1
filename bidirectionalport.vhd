@@ -15,13 +15,14 @@ entity BidirectionalPort  is
         -- Processor interface
         data_i      : in std_logic_vector (DATA_WIDTH-1 downto 0);
         data_o      : out std_logic_vector (DATA_WIDTH-1 downto 0);
-	irq	    : out std_logic_vector (DATA_WIDTH-1 downto 0);
         address     : in std_logic_vector (1 downto 0);		-- NÃO ALTERAR
         rw          : in std_logic; -- 0: read; 1: write
         ce          : in std_logic;
         
         -- External interface
-        port_io     : inout std_logic_vector (DATA_WIDTH-1 downto 0)
+        port_io     : inout std_logic_vector (DATA_WIDTH-1 downto 0);
+	-- Vetor de interrupção
+	irq	    : out std_logic_vector (DATA_WIDTH-1 downto 0)
     );
 end BidirectionalPort ;
 
@@ -57,7 +58,7 @@ begin
 	end process;
 	   
     COMBINATIONAL: for i in 0 to DATA_WIDTH-1 generate
-	irq(i) <= '1' when PortData(i) = '1' and PortEnable(i) = '1' and PortConfig(i) = '1' and irqEnable(i) = '1' else '0';
+	irq(i) <= PortData(i) and PortEnable(i) and PortConfig(i) and irqEnable(i);
         port_io(i) <= PortData(i) when PortConfig(i) = '0' and PortEnable(i) = '1' else 'Z';
         PortData_In(i) <= synch(i) when PortConfig(i) = '1' and PortEnable(i) = '1' else data_i(i);
         synch_in(i) <= port_io(i) when PortConfig(i) = '1' and PortEnable(i) = '1' else 'Z';
