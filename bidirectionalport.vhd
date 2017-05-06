@@ -6,7 +6,8 @@ entity BidirectionalPort  is
         DATA_WIDTH          : integer;    -- Port width in bits
         PORT_DATA_ADDR      : std_logic_vector(1 downto 0);     -- NÃO ALTERAR!
         PORT_CONFIG_ADDR    : std_logic_vector(1 downto 0);     -- NÃO ALTERAR! 
-        PORT_ENABLE_ADDR    : std_logic_vector(1 downto 0)      -- NÃO ALTERAR!
+        PORT_ENABLE_ADDR    : std_logic_vector(1 downto 0);      -- NÃO ALTERAR!
+	PORT_IRQ_ENABLE_ADDR : std_logic_vector(1 downto 0)
     );
     port (  
         clk         : in std_logic;
