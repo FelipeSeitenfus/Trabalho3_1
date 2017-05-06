@@ -55,7 +55,7 @@ architecture behavioral of R8 is
     type InstructionType is (Format1, Format2, other);
 	signal instType : InstructionType; -- Tipo da instrução
 	type State  is (Sidle, Sfetch, Sreg, Shalt, Salu, Srts, Spop, Sldsp, 
-			Sld, Sst, Swbk, Sjmp, Ssbrt, Spush, Smul, Sdiv, Smfh, Smfl
+			Sld, Sst, Swbk, Sjmp, Ssbrt, Spush, Smul, Sdiv, Smfh, Smfl,
 		        SpushF, SpopF, Srti); 
     signal currentState: State;
 	type Instruction is ( 
@@ -187,11 +187,11 @@ begin
                 when Sfetch => -- busca da instrucao
 					PC <= PC + 1; -- PC++
 					IR <= data_in; -- IR <= MEM(PC)
-					if decodedInstruction = SPUSHF then
+					if decodedInstruction = PUSHF then
 				 		currentState <= Spushf; 
 				 	else 
 				 		currentState <= Sreg;
-				 	enf if;
+				 	end if;
                     
                 when Sreg => -- leitura dos registradores
 					RA <= S1;
@@ -307,7 +307,7 @@ begin
 		when SpopF =>
 			SP <= SP + 1;
 			currentState <= Sfetch;
-			flags <= dtReg;
+			flags <= dtReg(3 downto 0);
 				 
 		when Srti =>
 				 
@@ -390,7 +390,7 @@ begin
 
 	-- Data out
 	data_out <= S2 when currentState = Sst else -- ST
-		    x"000" & flags when currentState = SpushF -- PUSHF	
+		    x"000" & flags when currentState = SpushF else -- PUSHF	
 		    opB; -- PUSH/Salto subrotina
 	
     -- Memory signals
