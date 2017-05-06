@@ -61,7 +61,7 @@ architecture behavioral of R8 is
         SL0, SL1, SR0, SR1,
         LDL, LDH, LD, ST, LDSP, POP, PUSH,
         JUMP_R, JUMP_A, JUMP_D, JSRR, JSR, JSRD,
-        NOP, HALT,  RTS, MUL, DIV, MFH, MFL
+        NOP, HALT,  RTS, MUL, DIV, MFH, MFL, PUSHF, POPF, RTI
     );
 	
     signal flags: std_logic_vector(3 downto 0); -- registrador que guarda as flags da ULA
