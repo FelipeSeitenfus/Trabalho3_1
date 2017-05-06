@@ -88,16 +88,20 @@ architecture behavioral of R8 is
     signal multiply : std_logic_vector(31 downto 0);
     signal division : std_logic_vector(31 downto 0);
     signal high, low: std_logic_vector(15 downto 0);
-    signal interruptReg: std_logic;
+    
 	-- Register file
     type RegisterArray is array (natural range <>) of std_logic_vector(15 downto 0);
     signal registerFile: RegisterArray(0 to 15);
-	signal flagInterrupt: std_logic;
 	
+	-- flags
 	alias negativeflag  : std_logic is flags(0);
     alias zeroflag      : std_logic is flags(1);
     alias carryflag     : std_logic is flags(2);
-    alias overflowflag  : std_logic is flags(3);
+    alias overflowflag  : std_logic is flags(3);  
+    
+    -- Interrrupt signals
+    signal interruptReg: std_logic;
+    signal atendendo_interrupcao: boolean;
 		
 begin   
 	instType <= Format1 when decodedInstruction=ADD or decodedInstruction=SUB or decodedInstruction=AAND or decodedInstruction=OOR or decodedInstruction=XXOR or decodedInstruction=NOT_A or decodedInstruction=SL0 or decodedInstruction=SR0 or decodedInstruction=SL1 or decodedInstruction=SR1 else
@@ -184,71 +188,71 @@ begin
 			for i in 0 to 15 loop   
                 registerFile(i) <= (others=>'0');  
             end loop;
-        elsif rising_edge(clk) then -- sensivel a borda de subida do clock
+        elsif rising_edge(clk) then -- sensivel a borda de subida do clock  
+            
             if interruptReg /= '1' then
 		        interruptReg <= intr;
-	    end if;
-	case currentState is
-		when Sidle =>  
+	        end if;   
+            
+        	case currentState is
+                when Sidle =>  
                     currentState <= Sfetch; 
                 
                 when Sfetch => -- busca da instrucao
-				 if interruptReg /= '1' then
-					PC <= PC + 1; -- PC++
-					IR <= data_in; -- IR <= MEM(PC)
-					if decodedInstruction = PUSHF then
-				 		currentState <= Spushf; 
-				 	elsif decodedInstruction = POPF then
-				 		currentState <= Spopf;
-					else
-				 		currentState <= Sreg;
-				 	end if;
-				 else -- salto para a interrupçao
-                    			flagInterrupt <= '1';
-				 	currentState <= Sreg;
-				 end if;
+                    if interruptReg = '1' and atendendo_interrupcao = false then
+                        atendendo_interrupcao <= true;
+                        currentState <= Sinterrupt;
+                    else -- salto para a interrupçao
+                    	PC <= PC + 1; -- PC++
+                        IR <= data_in; -- IR <= MEM(PC)
+                        currentState <= Sreg;
+                    end if; 
+					
                 when Sreg => -- leitura dos registradores
-					RA <= S1;
-					RB <= S2;
-					if decodedInstruction = HALT then
-						currentState <= Shalt;
-					else
-						currentState <= Salu;
+        			RA <= S1;
+        			RB <= S2;
+        			if decodedInstruction = HALT then
+        				currentState <= Shalt;
+        			elsif decodedInstruction = PUSHF then
+        		 		currentState <= Spushf; 
+        		 	elsif decodedInstruction = POPF then
+        		 		currentState <= Spopf;
+                    else 
+                        currentState <= Salu;
                     end if;
                     
                 when Salu => -- operacao com a ULA
-					RULA <= outula; -- recebe o resultado da operacao com a ULA
-					-- atualizacao das flags
-					if (decodedInstruction = ADD or decodedInstruction = ADDI or decodedInstruction = SUB or decodedInstruction = SUBI) then 
-						carryflag <= c;
-						overflowflag <= v;
-					end if;
-					if (instType = Format1 or decodedInstruction = ADDI or decodedInstruction = SUBI) then
-						negativeflag <= n;
-						zeroflag <= z;
-					end if;
-					if interruptReg = '1' then
-				 		currentState <= Sinterrupt;
-					elsif decodedInstruction = PUSH then
-						currentState <= Spush;
-					elsif decodedInstruction = POP then   
-						currentState <= Spop;
-					elsif decodedInstruction = RTS then   
-						currentState <= Srts;
-				 	elsif decodedInstruction = RTI then
-				 		currentState <= Srti;
-					elsif decodedInstruction = LDSP then   
-						currentState <= Sldsp;
-					elsif decodedInstruction = LD then   
-						currentState <= Sld;
-					elsif decodedInstruction = ST then   
-						currentState <= Sst;
-					elsif instType = Format1 or instType = Format2 then   
-						currentState <= Swbk;	
-					elsif decodedInstruction = JUMP_R or decodedInstruction = JUMP_A or decodedInstruction = JUMP_D then   
-						currentState <= Sjmp;
-					elsif decodedInstruction = JSRR or decodedInstruction = JSR or decodedInstruction = JSRD then   
-						currentState <= Ssbrt;
+        			RULA <= outula; -- recebe o resultado da operacao com a ULA
+        			-- atualizacao das flags
+        			if (decodedInstruction = ADD or decodedInstruction = ADDI or decodedInstruction = SUB or decodedInstruction = SUBI) then 
+        				carryflag <= c;
+        				overflowflag <= v;
+        			end if;
+        			if (instType = Format1 or decodedInstruction = ADDI or decodedInstruction = SUBI) then
+        				negativeflag <= n;
+        				zeroflag <= z;
+        			end if;
+        			
+        			if decodedInstruction = PUSH then
+        				currentState <= Spush;
+        			elsif decodedInstruction = POP then   
+        				currentState <= Spop;
+        			elsif decodedInstruction = RTS then   
+        				currentState <= Srts;
+        		 	elsif decodedInstruction = RTI then
+        		 		currentState <= Srti;
+        			elsif decodedInstruction = LDSP then   
+        				currentState <= Sldsp;
+        			elsif decodedInstruction = LD then   
+        				currentState <= Sld;
+        			elsif decodedInstruction = ST then   
+        				currentState <= Sst;
+        			elsif instType = Format1 or instType = Format2 then   
+        				currentState <= Swbk;	
+        			elsif decodedInstruction = JUMP_R or decodedInstruction = JUMP_A or decodedInstruction = JUMP_D then   
+        				currentState <= Sjmp;
+        			elsif decodedInstruction = JSRR or decodedInstruction = JSR or decodedInstruction = JSRD then   
+        				currentState <= Ssbrt;
                     elsif decodedInstruction = MUL then
                         currentState <= Smul;
                     elsif decodedInstruction = DIV then
@@ -257,47 +261,47 @@ begin
                         currentState <= Smfh;
                     elsif decodedInstruction = MFL then
                         currentState <= Smfl;
-					else    -- ** ATTENTION ** NOP and jumps with corresponding flags=0 execute in just 3 clock cycles 
-						currentState <= Sfetch;   
-					end if;     
+        			else    -- ** ATTENTION ** NOP and jumps with corresponding flags=0 execute in just 3 clock cycles 
+        				currentState <= Sfetch;   
+        			end if;     
                     
-				when Swbk => -- ciclo final para as intruções logicas/aritméticas (write back)
-					registerFile(TO_INTEGER(UNSIGNED(IR(11 downto 8)))) <= dtReg; -- regFile(i) <= RULA
-					currentState <= Sfetch;
+        		when Swbk => -- ciclo final para as intruções logicas/aritméticas (write back)
+        			registerFile(TO_INTEGER(UNSIGNED(IR(11 downto 8)))) <= dtReg; -- regFile(i) <= RULA
+        			currentState <= Sfetch;
                     
-				when Sld => -- ciclo final para a instrução de load (escrita do valor lido na memória)
-					registerFile(TO_INTEGER(UNSIGNED(IR(11 downto 8)))) <= dtReg; -- regFile(i) <= MEM(RULA)
-					currentState <= Sfetch;
+        		when Sld => -- ciclo final para a instrução de load (escrita do valor lido na memória)
+        			registerFile(TO_INTEGER(UNSIGNED(IR(11 downto 8)))) <= dtReg; -- regFile(i) <= MEM(RULA)
+        			currentState <= Sfetch;
                     
-				when Sst => -- ciclo final para a instrução de store (escrita do valor na memória)
+        		when Sst => -- ciclo final para a instrução de store (escrita do valor na memória)
                     currentState <= Sfetch;
                 
-				when Sldsp => -- ciclo final para a instrução de load para o stack pointer (escrita do valor no SP)
-					currentState <= Sfetch;
-					SP <= RULA; -- SP <= RegFile(i)
+        		when Sldsp => -- ciclo final para a instrução de load para o stack pointer (escrita do valor no SP)
+        			currentState <= Sfetch;
+        			SP <= RULA; -- SP <= RegFile(i)
                     
-				when Spush => -- ciclo final para a instrução de push (colocar dado na pilha e decrementar SP)
-					SP <= SP - 1;
-					currentState <= Sfetch;
+        		when Spush => -- ciclo final para a instrução de push (colocar dado na pilha e decrementar SP)
+        			SP <= SP - 1;
+        			currentState <= Sfetch;
                     
                 when Spop => -- ciclo final para a instrução de pop (retirar dado da pilha e incrementar SP)
-					SP <= RULA; -- SP++
-					registerFile(TO_INTEGER(UNSIGNED(IR(11 downto 8)))) <= dtReg; -- regFile(i) <= MEM(SP)
-					currentState <= Sfetch;
+        			SP <= RULA; -- SP++
+        			registerFile(TO_INTEGER(UNSIGNED(IR(11 downto 8)))) <= dtReg; -- regFile(i) <= MEM(SP)
+        			currentState <= Sfetch;
                     
-				when Ssbrt => -- ciclo final para as instruções de subrotina (colocar PC na pilha e saltar)
-					PC <= RULA; -- atualiza o PC com o novo endereço
-					SP <= SP - 1;
-					currentState <= Sfetch;
+        		when Ssbrt => -- ciclo final para as instruções de subrotina (colocar PC na pilha e saltar)
+        			PC <= RULA; -- atualiza o PC com o novo endereço
+        			SP <= SP - 1;
+        			currentState <= Sfetch;
                     
-				when Sjmp => -- ciclo final para as instruções de salto (saltar para o endereço especificado)
-					PC <= RULA; -- atualiza PC
-					currentState <= Sfetch;
+        		when Sjmp => -- ciclo final para as instruções de salto (saltar para o endereço especificado)
+        			PC <= RULA; -- atualiza PC
+        			currentState <= Sfetch;
                     
-				when Srts => -- ciclo final para a instrução de retorno de subrotina (recuperar pc da pilha e incrementar SP)
-					SP <= RULA; -- SP++
-					PC <= data_in; -- PC recuperado da pilha
-					currentState <= Sfetch; 
+        		when Srts => -- ciclo final para a instrução de retorno de subrotina (recuperar pc da pilha e incrementar SP)
+        			SP <= RULA; -- SP++
+        			PC <= data_in; -- PC recuperado da pilha
+        			currentState <= Sfetch; 
                 
                 when Smul =>
                     high <= multiply(31 downto 16);
@@ -316,33 +320,38 @@ begin
                 when Smfl =>
                     registerFile(TO_INTEGER(UNSIGNED(IR(11 downto 8)))) <= dtReg;
                     currentState <= Sfetch;
-                    
-		when SpushF =>
-			SP <= SP - 1;
-			currentState <= Sfetch;
-				 
-		when SpopF =>
-			SP <= SP + 1;
-			currentState <= Sfetch;
-			flags <= dtReg(3 downto 0);
-				 
-		when Srti =>
-			SP <= RULA; -- SP++
-			PC <= data_in; -- PC recuperado da pilha
-			--interruptReg <= '0';
-			currentState <= Sfetch;  
-		when Sinterrupt =>
-			SP <= SP - 1;
-			PC <= INTERRUPT_ADDRESS;
-		when others => -- Shalt
-			currentState <= Shalt;
+                            
+        		when SpushF =>
+        			SP <= SP - 1;
+        			currentState <= Sfetch;
+        				 
+        		when SpopF =>
+        			SP <= SP + 1;
+        			currentState <= Sfetch;
+        			flags <= dtReg(3 downto 0);
+        				 
+        		when Srti =>
+        			SP <= RULA; -- SP++
+        			PC <= data_in; -- PC recuperado da pilha
+        			interruptReg <= '0';
+					atendendo_interrupcao = false;
+        			currentState <= Sfetch;  
+        		when Sinterrupt => -- atendendo interrupcao
+        			SP <= SP - 1;
+        			PC <= INTERRUPT_ADDRESS;
+					currentState <= Sfetch;
+        		when others => -- Shalt
+        			currentState <= Shalt;
 		
             end case;
         end if;
     end process;		
+	
 	-- seleciona o destino do dado que será escrito no banco de registradores
 	dtReg <= data_in when decodedInstruction = LD or decodedInstruction = POP or decodedInstruction = POPF else -- dado da memória
-		 RULA; -- dado da ULA
+		     RULA; -- dado da ULA
+	
+	
 	
 	-- Register File read
 	-- Selects the read register 1 (Rsource 1)	
@@ -351,6 +360,8 @@ begin
     -- Selects the read register 2 (Rtarget or Rsource2)
     S2 <= registerFile(TO_INTEGER(UNSIGNED(ir(11 downto 8)))) when instType = Format2 or decodedInstruction = PUSH or currentState = Sst or decodedInstruction = MUL or decodedInstruction = DIV else -- RTarget
 		  registerFile(TO_INTEGER(UNSIGNED(IR(3 downto 0)))); -- RSource2
+	
+	
 	
 	-- operandos do somador -- usado para ADD/SUB/LD/ST/ADDI/SUBI/JSRD/JUMP_D
 	op1_adder <= opA when decodedInstruction = ADD or decodedInstruction = SUB or decodedInstruction = LD or decodedInstruction = ST else -- ADD/SUB/LD/ST
@@ -403,19 +414,28 @@ begin
     -- DIVISION
     division(31 downto 16) <= STD_LOGIC_VECTOR(UNSIGNED(RB) mod UNSIGNED(RA));
     division(15 downto 0) <= STD_LOGIC_VECTOR(UNSIGNED(RB)/UNSIGNED(RA));        
-        
-	-- Memoria
+    
+    
+	-- Memory
+    
 	-- Memory Address
 	address <= PC when currentState = Sfetch else -- Busca da instruçao
-		   RULA when currentState = Sld or currentState = Sst or currentState = Spop or currentState = Srts else -- LD/ST/RTS/POP
-		   SP + 1 when currentState = SpopF else	
-		   SP; -- PUSH or PUSHF or Sinterrupt
+			   RULA when currentState = Sld or currentState = Sst or currentState = Spop or currentState = Srts else -- LD/ST/RTS/POP
+		       SP + 1 when currentState = SpopF else	
+		       SP; -- PUSH or PUSHF or Sinterrupt
+			   
 	-- Data out
 	data_out <= S2 when currentState = Sst else -- ST
-		    x"000" & flags when currentState = SpushF else -- PUSHF	
-		    opB; -- PUSH/Salto subrotina/Sinterrupt
+		        x"000" & flags when currentState = SpushF else -- PUSHF
+				PC when currentState = Sinterrupt else
+		        opB; -- PUSH/Salto subrotina/Sinterrupt
 	
     -- Memory signals
-    ce <= '1' when rst = '0' and (currentState = Sfetch or currentState = Srts or currentState = Spop or currentState = Sld or currentState = Ssbrt or currentState = Spush or currentState = Sst) else '0';
-    rw <= '1' when (currentState = Sfetch or currentState = Srts or currentState = Spop or currentState = Sld) else '0';
+    ce <= '1' when rst = '0' and (currentState = Sfetch or currentState = Srts or currentState = Srti or 
+           currentState = Spop or currentState = Spopf or currentState = Sld or currentState = Ssbrt or 
+           currentState = Spush or currentState = Spushf or currentState = Sst or
+		   currentState = Sinterrupt) else '0';
+		   
+    rw <= '1' when (currentState = Sfetch or currentState = Srts or currentState = Spop or 
+           currentState = Spopf or currentState = Sld) else '0';
 end behavioral;
