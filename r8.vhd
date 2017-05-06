@@ -88,7 +88,7 @@ architecture behavioral of R8 is
     signal multiply : std_logic_vector(31 downto 0);
     signal division : std_logic_vector(31 downto 0);
     signal high, low: std_logic_vector(15 downto 0);
-    --signal interruptReg: std_logic;
+    signal interruptReg: std_logic;
 	-- Register file
     type RegisterArray is array (natural range <>) of std_logic_vector(15 downto 0);
     signal registerFile: RegisterArray(0 to 15);
@@ -186,14 +186,14 @@ begin
             end loop;
         elsif rising_edge(clk) then -- sensivel a borda de subida do clock
             if interruptReg /= '1' then
-		interruptReg <= intr;
+		        interruptReg <= intr;
 	    end if;
 	case currentState is
 		when Sidle =>  
                     currentState <= Sfetch; 
                 
                 when Sfetch => -- busca da instrucao
-				 if interruptReg \= 1 then
+				 if interruptReg /= '1' then
 					PC <= PC + 1; -- PC++
 					IR <= data_in; -- IR <= MEM(PC)
 					if decodedInstruction = PUSHF then
@@ -340,7 +340,6 @@ begin
             end case;
         end if;
     end process;		
-
 	-- seleciona o destino do dado que será escrito no banco de registradores
 	dtReg <= data_in when decodedInstruction = LD or decodedInstruction = POP or decodedInstruction = POPF else -- dado da memória
 		 RULA; -- dado da ULA
@@ -411,7 +410,6 @@ begin
 		   RULA when currentState = Sld or currentState = Sst or currentState = Spop or currentState = Srts else -- LD/ST/RTS/POP
 		   SP + 1 when currentState = SpopF else	
 		   SP; -- PUSH or PUSHF or Sinterrupt
-
 	-- Data out
 	data_out <= S2 when currentState = Sst else -- ST
 		    x"000" & flags when currentState = SpushF else -- PUSHF	
@@ -420,5 +418,4 @@ begin
     -- Memory signals
     ce <= '1' when rst = '0' and (currentState = Sfetch or currentState = Srts or currentState = Spop or currentState = Sld or currentState = Ssbrt or currentState = Spush or currentState = Sst) else '0';
     rw <= '1' when (currentState = Sfetch or currentState = Srts or currentState = Spop or currentState = Sld) else '0';
-
 end behavioral;
