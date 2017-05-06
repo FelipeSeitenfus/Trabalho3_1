@@ -386,7 +386,8 @@ begin
 	-- Memory Address
 	address <= PC when currentState = Sfetch else -- Busca da instruçao
 		   RULA when currentState = Sld or currentState = Sst or currentState = Spop or currentState = Srts else -- LD/ST/RTS/POP
-		   SP; -- PUSH or PUSHF or POPF
+		   SP + 1 when currentState = SpopF	
+		   SP; -- PUSH or PUSHF
 
 	-- Data out
 	data_out <= S2 when currentState = Sst else -- ST
