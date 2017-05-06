@@ -22,7 +22,7 @@ architecture behavioral of R8_uC is
     signal addressMemory : std_logic_vector(14 downto 0);
     signal addressPortA, addressPortB : std_logic_vector(1 downto 0);
     signal dataFromPortA, dataFromPortB : std_logic_vector (15 downto 0);
-    signal rw, ce, wr, nclk, we_n, oe_n : std_logic;
+    signal rw, ce, wr, nclk, we_n, oe_n, interruption : std_logic;
     signal enableMemory, enablePortA, enablePortB : std_logic;
     signal dataBus : std_logic_vector(15 downto 0);
     
@@ -36,7 +36,8 @@ begin
         data_out    => dataFromR8,           -- data to processor
         address     => addressR8, 
         ce          => ce,               -- memory control
-        rw          => rw          --
+        rw          => rw,
+	intr	    => interruption--
         );                     
     
     RAM : entity work.Memory   
@@ -102,7 +103,7 @@ begin
     -- PortA control signals
     addressPortA <= addressR8(1 downto 0);
     enablePortA <= '1' when (ce = '1' and addressR8(15 downto 12) = "1000") else '0';
-	-- PortB control signals
+    -- PortB control signals
     addressPortB <= addressR8(1 downto 0);
     enablePortB <= '1' when (ce = '1' and addressR8(15 downto 12) = "1001") else '0';
     -- Memory signals
@@ -112,6 +113,7 @@ begin
     addressMemory <= addressR8(14 downto 0);
     wr <= not rw;
     enableMemory <= '0' when (ce = '1' and addressR8(15) = '0') else '1';
-    dataBus <= dataFromR8 when (enableMemory = '0' and rw = '0') else (others => 'Z'); 
-    
+    dataBus <= dataFromR8 when (enableMemory = '0' and rw = '0') else (others => 'Z');
+    -- interrupção: port_B(10) e port_A(10) indicam a interrupção
+    interruption <= port_B(10) or port_A(10);
 end behavioral;
