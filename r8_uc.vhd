@@ -95,7 +95,7 @@ begin
         rw => wr,
         ce => enablePortB,
         
-        port_io => port_B 
+        port_io => port_B, 
         irq => interrupt_PortB
         );  
     
