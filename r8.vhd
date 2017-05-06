@@ -334,7 +334,7 @@ begin
         			SP <= RULA; -- SP++
         			PC <= data_in; -- PC recuperado da pilha
         			interruptReg <= '0';
-					atendendo_interrupcao = false;
+					atendendo_interrupcao <= false;
         			currentState <= Sfetch;  
         		when Sinterrupt => -- atendendo interrupcao
         			SP <= SP - 1;
