@@ -53,7 +53,7 @@ begin
 				PortConfig <= data_i;
 			elsif (address = PORT_ENABLE_ADDR and ce = '1' and rw = '1') then
 				PortEnable <= data_i;
-			elsif (address = PORT_IRQ_ENABLE_ADDR and ce = '1' and rw = '1') the
+			elsif (address = PORT_IRQ_ENABLE_ADDR and ce = '1' and rw = '1') then
 				irqEnable <= data_i;
 			end if;
 		end if;
