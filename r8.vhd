@@ -85,6 +85,7 @@ architecture behavioral of R8 is
     signal multiply : std_logic_vector(31 downto 0);
     signal division : std_logic_vector(31 downto 0);
     signal high, low: std_logic_vector(15 downto 0);
+    --signal interruptReg: std_logic_vector;
 	-- Register file
     type RegisterArray is array (natural range <>) of std_logic_vector(15 downto 0);
     signal registerFile: RegisterArray(0 to 15);	
@@ -189,7 +190,9 @@ begin
 					IR <= data_in; -- IR <= MEM(PC)
 					if decodedInstruction = PUSHF then
 				 		currentState <= Spushf; 
-				 	else 
+				 	elsif decodedInstruction = RTI then
+				 		currentState <= Srti;
+					else
 				 		currentState <= Sreg;
 				 	end if;
                     
@@ -310,7 +313,10 @@ begin
 			flags <= dtReg(3 downto 0);
 				 
 		when Srti =>
-				 
+			SP <= RULA; -- SP++
+			PC <= data_in; -- PC recuperado da pilha
+			--interruptReg <= '0';
+			currentState <= Sfetch;  
 		when others => -- Shalt
 			currentState <= Shalt;
 		
@@ -362,7 +368,7 @@ begin
 				'0' & opA(15 downto 1) when decodedInstruction = SR0   else	 					-- shift right 1 posição para a direita inserindo 0 no bit 15
 				'1' & opA(15 downto 1) when decodedInstruction = SR1   else						-- shift right 1 posição para a direita inserindo 0 no bit 15
 				not opA                when decodedInstruction = NOT_A  else					-- NOT 
-				STD_LOGIC_VECTOR(UNSIGNED(opB) + 1)	when decodedInstruction = RTS or decodedInstruction = POP else   									-- Incrementa o SP para POP e RTS
+				STD_LOGIC_VECTOR(UNSIGNED(opB) + 1)	when decodedInstruction = RTS or decodedInstruction = POP or decodedInstruction = RTI else   									-- Incrementa o SP para POP e RTS
 				opA                               	when decodedInstruction = JUMP_A or decodedInstruction = JSR  or decodedInstruction = LDSP else		-- bypass para jump absoluto, salto de subrotina ou carregamento de SP
                 		high                                	when decodedInstruction = MFH else
                			low                                 	when decodedInstruction = MFL else     
