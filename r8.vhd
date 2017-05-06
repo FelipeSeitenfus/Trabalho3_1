@@ -380,7 +380,7 @@ begin
 		   RA; -- registrador lido
 		   
 	-- escolhe o segundo operando da ULA
-	opB <= SP when decodedInstruction = RTS or decodedInstruction = POP else -- SP
+	opB <= SP when decodedInstruction = RTS or decodedInstruction = POP or decodedInstruction = RTI else -- SP
 		   PC when decodedInstruction = JUMP_R or decodedInstruction = JUMP_A or decodedInstruction = JUMP_D or decodedInstruction = JSRR or decodedInstruction = JSR or decodedInstruction = JSRD else -- PC
 		   RB; -- registrador lido
     
