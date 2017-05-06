@@ -52,20 +52,26 @@
 	ldl r15, #address_PortConfig_B
 	st r5, r15, r0 ; address_PortData_B
 	
-	
-	ldh r15, #70h
+	ldh r15, #60h
 	ldl r15, #FFh ; PortConfig <= 0111000011111111
 	st r15, r2, r0 ; PortConfigA <= 0111000011111111
 	
-	
-	st r15, r5, r0 ; PortConfigB <= 0111000011111111
+	ldh r15, #74h
+	ldl r15, #FFh ; PortConfig <= 0111000011111111
+	st r15, r5, r0 ; PortConfigB <= 0111010011111111
 	
 	st r0, r1, r0 ; PortData_A <= 0000h
 	st r0, r4, r0 ; PortData_B <= 0000h
 	
+	ldh r15, #24h
+	ldl r15, #00h
+	st r15, r7, r0 ;irqEnable port_B
+	
 	; enable PortA and PortB
-	ldh r15, #F8h
+	ldh r15, #98h
 	st r15, r3, r0 ; PortEnable_A <= 1111100011111111
+	
+	ldh r15, #FCh
 	st r15, r6, r0 ; PortEnable_B <= 1111100011111111
 	
 	; r3 is free
