@@ -319,7 +319,7 @@ begin
     end process;		
 
 	-- seleciona o destino do dado que será escrito no banco de registradores
-	dtReg <= data_in when decodedInstruction = LD or decodedInstruction = POP else -- dado da memória
+	dtReg <= data_in when decodedInstruction = LD or decodedInstruction = POP or decodedInstruction = POPF else -- dado da memória
 		 RULA; -- dado da ULA
 	
 	-- Register File read
@@ -386,7 +386,7 @@ begin
 	-- Memory Address
 	address <= PC when currentState = Sfetch else -- Busca da instruçao
 		   RULA when currentState = Sld or currentState = Sst or currentState = Spop or currentState = Srts else -- LD/ST/RTS/POP
-		   SP; -- PUSH or PUSHF
+		   SP; -- PUSH or PUSHF or POPF
 
 	-- Data out
 	data_out <= S2 when currentState = Sst else -- ST
