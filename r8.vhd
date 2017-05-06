@@ -44,6 +44,7 @@ entity R8 is
         data_in : in std_logic_vector(15 downto 0);
         data_out: out std_logic_vector(15 downto 0);
         address : out std_logic_vector(15 downto 0);
+	intr	: in std_logic;
         ce      : out std_logic;
         rw      : out std_logic 
     );
@@ -342,12 +343,12 @@ begin
 				not opA                when decodedInstruction = NOT_A  else					-- NOT 
 				STD_LOGIC_VECTOR(UNSIGNED(opB) + 1)	when decodedInstruction = RTS or decodedInstruction = POP else   									-- Incrementa o SP para POP e RTS
 				opA                               	when decodedInstruction = JUMP_A or decodedInstruction = JSR  or decodedInstruction = LDSP else		-- bypass para jump absoluto, salto de subrotina ou carregamento de SP
-                high                                when decodedInstruction = MFH else
-                low                                 when decodedInstruction = MFL else     
+                		high                                	when decodedInstruction = MFH else
+               			low                                 	when decodedInstruction = MFL else     
 				adder(15 downto 0); 																-- ADD, LD, ST, SUB, ADDI, SUBI, JSRD, JUMP_D
 		
     -- Flags para a ULA
-    z <= '1' when outula = 0 else '0'; 										-- zero
+    	z <= '1' when outula = 0 else '0'; 										-- zero
 	n <= outula(15); 														-- negativo			
 	c <= adder(16); 														-- carry
 	v <= '1' when (op1_adder(15) = op2_adder(15) and op1_adder(15) /= outula(15)) else '0'; 	-- overflow sinalization
@@ -363,12 +364,12 @@ begin
 	-- Memoria
 	-- Memory Address
 	address <= PC when currentState = Sfetch else -- Busca da instruçao
-			   RULA when currentState = Sld or currentState = Sst or currentState = Spop or currentState = Srts else -- LD/ST/RTS/POP
-			   SP; -- PUSH
+		   RULA when currentState = Sld or currentState = Sst or currentState = Spop or currentState = Srts else -- LD/ST/RTS/POP
+		   SP; -- PUSH
 
 	-- Data out
 	data_out <= S2 when currentState = Sst else -- ST
-				opB; -- PUSH/Salto subrotina
+		    opB; -- PUSH/Salto subrotina
 	
     -- Memory signals
     ce <= '1' when rst = '0' and (currentState = Sfetch or currentState = Srts or currentState = Spop or currentState = Sld or currentState = Ssbrt or currentState = Spush or currentState = Sst) else '0';
