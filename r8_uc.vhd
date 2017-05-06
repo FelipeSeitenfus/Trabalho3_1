@@ -115,5 +115,6 @@ begin
     enableMemory <= '0' when (ce = '1' and addressR8(15) = '0') else '1';
     dataBus <= dataFromR8 when (enableMemory = '0' and rw = '0') else (others => 'Z');
     -- interrupção: port_B(10) e port_A(10) indicam a interrupção
-    interruption <= port_B(10) or port_A(10);
+    interruption <= port_B(0) or port_B(1) or port_B(2) or port_B(3) or port_B(4) or port_B(5) or port_B(6) or port_B(7)
+	    	    or port_B(8) or port_B(9) or port_B(10) or port_B(11) or port_B(12) or port_B(13) or port_B(41) or port_B(15);
 end behavioral;
