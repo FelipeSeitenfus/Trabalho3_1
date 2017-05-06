@@ -36,6 +36,9 @@ use IEEE.numeric_std.all;
 
 
 entity R8 is
+	generic(
+        INTERRUPT_ADDRESS: std_logic_vector(15 downto 0)
+	);
     port( 
         clk     : in std_logic;
         rst     : in std_logic;
@@ -56,7 +59,7 @@ architecture behavioral of R8 is
 	signal instType : InstructionType; -- Tipo da instrução
 	type State  is (Sidle, Sfetch, Sreg, Shalt, Salu, Srts, Spop, Sldsp, 
 			Sld, Sst, Swbk, Sjmp, Ssbrt, Spush, Smul, Sdiv, Smfh, Smfl,
-		        SpushF, SpopF, Srti); 
+		        SpushF, SpopF, Srti, Sinterrupt); 
     signal currentState: State;
 	type Instruction is ( 
         ADD, SUB, AAND, OOR, XXOR, ADDI, SUBI, NOT_A, 
@@ -88,7 +91,8 @@ architecture behavioral of R8 is
     --signal interruptReg: std_logic;
 	-- Register file
     type RegisterArray is array (natural range <>) of std_logic_vector(15 downto 0);
-    signal registerFile: RegisterArray(0 to 15);	
+    signal registerFile: RegisterArray(0 to 15);
+	signal flagInterrupt: std_logic;
 	
 	alias negativeflag  : std_logic is flags(0);
     alias zeroflag      : std_logic is flags(1);
@@ -189,6 +193,7 @@ begin
                     currentState <= Sfetch; 
                 
                 when Sfetch => -- busca da instrucao
+				 if interruptReg \= 1 then
 					PC <= PC + 1; -- PC++
 					IR <= data_in; -- IR <= MEM(PC)
 					if decodedInstruction = PUSHF then
@@ -198,7 +203,10 @@ begin
 					else
 				 		currentState <= Sreg;
 				 	end if;
-                    
+				 else -- salto para a interrupçao
+                    			flagInterrupt <= '1';
+				 	currentState <= Sreg;
+				 end if;
                 when Sreg => -- leitura dos registradores
 					RA <= S1;
 					RB <= S2;
@@ -219,8 +227,9 @@ begin
 						negativeflag <= n;
 						zeroflag <= z;
 					end if;
-					
-					if decodedInstruction = PUSH then
+					if interruptReg = '1' then
+				 		currentState <= Sinterrupt;
+					elsif decodedInstruction = PUSH then
 						currentState <= Spush;
 					elsif decodedInstruction = POP then   
 						currentState <= Spop;
@@ -322,6 +331,9 @@ begin
 			PC <= data_in; -- PC recuperado da pilha
 			--interruptReg <= '0';
 			currentState <= Sfetch;  
+		when Sinterrupt =>
+			SP <= SP - 1;
+			PC <= INTERRUPT_ADDRESS;
 		when others => -- Shalt
 			currentState <= Shalt;
 		
@@ -398,12 +410,12 @@ begin
 	address <= PC when currentState = Sfetch else -- Busca da instruçao
 		   RULA when currentState = Sld or currentState = Sst or currentState = Spop or currentState = Srts else -- LD/ST/RTS/POP
 		   SP + 1 when currentState = SpopF else	
-		   SP; -- PUSH or PUSHF
+		   SP; -- PUSH or PUSHF or Sinterrupt
 
 	-- Data out
 	data_out <= S2 when currentState = Sst else -- ST
 		    x"000" & flags when currentState = SpushF else -- PUSHF	
-		    opB; -- PUSH/Salto subrotina
+		    opB; -- PUSH/Salto subrotina/Sinterrupt
 	
     -- Memory signals
     ce <= '1' when rst = '0' and (currentState = Sfetch or currentState = Srts or currentState = Spop or currentState = Sld or currentState = Ssbrt or currentState = Spush or currentState = Sst) else '0';
