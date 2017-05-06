@@ -25,8 +25,8 @@ architecture behavioral of R8_uC is
     signal rw, ce, wr, nclk, we_n, oe_n, interruption : std_logic;
     signal enableMemory, enablePortA, enablePortB : std_logic;
     signal dataBus : std_logic_vector(15 downto 0);
-    
-    
+    signal interrupt_PortB : std_logic_vector(15 downto 0);
+	
 begin  
     PROCESSOR: entity work.R8                -- processor
     port map (
@@ -93,7 +93,8 @@ begin
         rw => wr,
         ce => enablePortB,
         
-        port_io => port_B   
+        port_io => port_B 
+        irq => interrupt_PortB
         );  
     
     dataToR8 <= dataBus when enableMemory = '0' else
@@ -115,6 +116,6 @@ begin
     enableMemory <= '0' when (ce = '1' and addressR8(15) = '0') else '1';
     dataBus <= dataFromR8 when (enableMemory = '0' and rw = '0') else (others => 'Z');
     -- interrupção: port_B(10) e port_A(10) indicam a interrupção
-    interruption <= port_B(0) or port_B(1) or port_B(2) or port_B(3) or port_B(4) or port_B(5) or port_B(6) or port_B(7)
-	    	    or port_B(8) or port_B(9) or port_B(10) or port_B(11) or port_B(12) or port_B(13) or port_B(14) or port_B(15);
+    interruption <= interrupt_PortB(0) or interrupt_PortB(1) or interrupt_PortB(2) or interrupt_PortB(3) or interrupt_PortB(4) or interrupt_PortB(5) or interrupt_PortB(6) or interrupt_PortB(7)
+	    	    or interrupt_PortB(8) or interrupt_PortB(9) or interrupt_PortB(10) or interrupt_PortB(11) or interrupt_PortB(12) or interrupt_PortB(13) or interrupt_PortB(14) or interrupt_PortB(15);
 end behavioral;
