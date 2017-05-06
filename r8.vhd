@@ -54,7 +54,9 @@ architecture behavioral of R8 is
 
     type InstructionType is (Format1, Format2, other);
 	signal instType : InstructionType; -- Tipo da instrução
-	type State  is (Sidle, Sfetch, Sreg, Shalt, Salu, Srts, Spop, Sldsp, Sld, Sst, Swbk, Sjmp, Ssbrt, Spush, Smul, Sdiv, Smfh, Smfl); 
+	type State  is (Sidle, Sfetch, Sreg, Shalt, Salu, Srts, Spop, Sldsp, 
+			Sld, Sst, Swbk, Sjmp, Ssbrt, Spush, Smul, Sdiv, Smfh, Smfl
+		        SpushF, SpopF, Srti); 
     signal currentState: State;
 	type Instruction is ( 
         ADD, SUB, AAND, OOR, XXOR, ADDI, SUBI, NOT_A, 
@@ -185,7 +187,11 @@ begin
                 when Sfetch => -- busca da instrucao
 					PC <= PC + 1; -- PC++
 					IR <= data_in; -- IR <= MEM(PC)
-					currentState <= Sreg; 
+					if decodedInstruction = SPUSHF then
+				 		currentState <= Spushf; 
+				 	else 
+				 		currentState <= Sreg;
+				 	enf if;
                     
                 when Sreg => -- leitura dos registradores
 					RA <= S1;
@@ -294,15 +300,27 @@ begin
                     registerFile(TO_INTEGER(UNSIGNED(IR(11 downto 8)))) <= dtReg;
                     currentState <= Sfetch;
                     
-				when others => -- Shalt
-					currentState <= Shalt;
+		when SpushF =>
+			SP <= SP - 1;
+			currentState <= Sfetch;
+				 
+		when SpopF =>
+			SP <= SP + 1;
+			currentState <= Sfetch;
+			flags <= dtReg;
+				 
+		when Srti =>
+				 
+		when others => -- Shalt
+			currentState <= Shalt;
+		
             end case;
         end if;
     end process;		
 
 	-- seleciona o destino do dado que será escrito no banco de registradores
 	dtReg <= data_in when decodedInstruction = LD or decodedInstruction = POP else -- dado da memória
-			 RULA; -- dado da ULA
+		 RULA; -- dado da ULA
 	
 	-- Register File read
 	-- Selects the read register 1 (Rsource 1)	
@@ -368,10 +386,11 @@ begin
 	-- Memory Address
 	address <= PC when currentState = Sfetch else -- Busca da instruçao
 		   RULA when currentState = Sld or currentState = Sst or currentState = Spop or currentState = Srts else -- LD/ST/RTS/POP
-		   SP; -- PUSH
+		   SP; -- PUSH or PUSHF
 
 	-- Data out
 	data_out <= S2 when currentState = Sst else -- ST
+		    x"000" & flags when currentState = SpushF -- PUSHF	
 		    opB; -- PUSH/Salto subrotina
 	
     -- Memory signals
