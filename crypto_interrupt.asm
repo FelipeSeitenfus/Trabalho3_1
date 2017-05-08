@@ -74,41 +74,13 @@
 	ldh r15, #FCh
 	st r15, r6, r0 ; PortEnable_B <= 1111100011111111
 	
+	ldh r15, #random_number
+	ldl r15, #random_number
+	
 	; r3 is free
 	xor r3, r3, r3 ; r3 <= 0 ; random number
-	
-	; store of the values of the address of Ports in variables
-	ldh r6, #address_PortData_A
-	ldl r6, #address_PortData_A
-	st r1, r6, r0 ; address_PortData_A <= address_PortData_A
-	
-	ldh r6, #address_PortData_B
-	ldl r6, #address_PortData_B
-	st r4, r6, r0 ; address_PortData_B <= address_PortData_B
-	
-	ldh r6, #address_PortConfig_A
-	ldl r6, #address_PortConfig_A
-	st r2, r6, r0 ; address_PortConfig_A <= address_PortConfig_A
-	
-	ldh r6, #address_PortConfig_B
-	ldl r6, #address_PortConfig_B
-	st r5, r6, r0 ; address_PortConfig_B <= address_PortConfig_B
-	
-	; bitmasks inicialization
-	ldh r9, #20h
-	ldl r9, #00h ; r9 <= bitmask para keyExchange 
-	ldh r10, #00h
-	ldl r10, #FFh ; r10 <= bitmask para data_in(crypto) -- LOW BYTE MASK
-	ldh r11, #FFh
-	ldl r11, #00h ; r11 <= HIGH BYTE MASK
-	ldh r12, #80h
-	ldl r12, #00h ; r12 <= bitmask para ack
-	ldh r13, #08h
-	ldl r13, #00h ; r13 <= bitmask para in/out
-	ldh r14, #40h
-	ldl r14, #00h ; r14 <= bitmask para data_av 
-	ldh r15, #10h
-	ldl r15, #00h ; r15 <= bitmask para eom 
+	st r3, r15, r0
+	; bitmasks inicialization 
 	
 ; ---------------------------------------- INICIO CRYPTO1 ---------------------------------------------	
 
@@ -123,77 +95,21 @@ inicio_crypto1:
 	ldl r2, #address_PortConfig_A
 	ld r2, r2, r0 ; r2 <= address_PortConfig_A
 	
-testa_crypto_1:
-	ld r8, r1, r0 ; r8 <= PortData_A
-	and r4, r8, r9 
-	JMPZD #testa_crypto_1 ; pooling enquanto keyExchange = 0
-	and r8, r8, r10 ; BITS do magic number do Crypto
-	ldh r4, #magicNumberFromCrypto1
-	ldl r4, #magicNumberFromCrypto1
-	st r8, r4, r0 ; magicNumberFromCrypto1 <= magicNumberFromCrypto1
-calcula_magic_number1:
-	; prepara para a chamada de exp_mod (parametros)
-	ldh r5, #00h
-	ldl r5, #FBh ; q <= 251
-	ldh r6, #00h
-	ldl r6, #06h ; a <= 6
-	jsrd #verifica_num_alet
-	addi r3, #1 ; incrementa o numero aleatorio
-	jsrd #exp_mod ; resposta retornada em r7 => magicNumberFromProcessor
-	ldh r4, #magicNumberFromProcessor
-	ldl r4, #magicNumberFromProcessor
-	st r7, r4, r0 ; magicNumberFromProcessor <= r7
-; magicNumber do processador em r7
-	ld r4, r1, r0
-	or r4, r4, r13 ; seta o bit para o tristate
-	st r4, r1, r0 
-
-	ld r4, r2, r0 ; r4 <= PortConfigA
-	and r4, r4, r11 ; r4 <= Porta vira saida
-	st r4, r2, r0 ; PortA(7:0) => saida
+	ldh r3, #random_number
+	ldl r3, #random_number
+	ld r3, r3, r0
+	jsrd #testa_crypto
+	jsrd #calcula_chave
 	
-	or r5, r7, r13 ; seta o magicNumber e o bit do tristate
-	or r5, r5, r12 ; seta ack
-	st r5, r1, r0 ; PortData_A <= MagicNumber + ack + tristate_signal
-	xor r5, r5, r12 ; desativa o ack
-	st r5, r1, r0 ; desativa o ack
-	
-	ld r4, r2, r0 ; r4 <= PortConfigA
-	or r4, r10, r4 ; 
-	st r4, r2, r0 ; PortA(7:0) => entrada
-	xor r4, r4, r4 ;
-	st r4, r1, r0 ; desativa o tristate
-calcula_chave_1:
-	ldh r4, #magicNumberFromCrypto1
-	ldl r4, #magicNumberFromCrypto1
-	ld r6, r4, r0 ; r6 <= MagicNumber do crypto A
-	ldh r5, #00h
-	ldl r5, #FBh ; r5 <= q (251)
-	jsrd #exp_mod ; chave em r7
 	xor r6, r6, r6 ; r6 <= contador de caracteres
-	
-le_caractere1_crypto1:
-	ld r4, r1, r0 ; r4 <= PortData_A
-	and r5, r4, r9 ; teste de mensagem vazia
-	jmpzd #mensagem_nao_vazia_crypto1 ;
-	jmpd #inicio_crypto2 ; mensagem vazia, logo recomeca pelo outro crypto 
-	
-mensagem_nao_vazia_crypto1:
-	and r5, r14, r4
-	JMPZD #le_caractere1_crypto1 ; pooling enquanto o caractere nao esta pronto
-	or r5, r4, r12 ;
-	st r5, r1, r0 ; pulso em ack
-	xor r5, r5, r12 ;
-	st r5, r1, r0 ; limpa o ack
-	and r8, r4, r10 ; limpa a parte alta de PortDataA
-	xor r8, r7, r8 ; descriptografa a mensagem
-	; mensagem descriptografa em r8 (parte baixa)
+	jsrd #le_caractere_crypto
 	and r4, r15, r4 ; verifica fim da mensagem
 	jmpzd #move_data_up_crypto1
 	jmpd #guarda_caractere_crypto1
 	
 move_data_up_crypto1:
-	jsrd #move_high ; r8 <= caractere (parte alta)
+	jsrd #move_data_up_crypto;
+	
 le_caractere2_crypto1: ; r8 <= caractere par
 	ld r4, r1, r0 ; r4 <= PortData_A
 	and r5, r14, r4
@@ -388,7 +304,100 @@ reinicia_numero:
 		ldl r3, #00h
 		pop r5
 		rts
-		
+bitmask_init:	
+	ldh r9, #20h
+	ldl r9, #00h ; r9 <= bitmask para keyExchange 
+	ldh r10, #00h
+	ldl r10, #FFh ; r10 <= bitmask para data_in(crypto) -- LOW BYTE MASK
+	ldh r11, #FFh
+	ldl r11, #00h ; r11 <= HIGH BYTE MASK
+	ldh r12, #80h
+	ldl r12, #00h ; r12 <= bitmask para ack
+	ldh r13, #08h
+	ldl r13, #00h ; r13 <= bitmask para in/out
+	ldh r14, #40h
+	ldl r14, #00h ; r14 <= bitmask para data_av 
+	ldh r15, #10h
+	ldl r15, #00h ; r15 <= bitmask para eom
+	rts
+
+calcula_magic_number:
+	; prepara para a chamada de exp_mod (parametros)
+	ldh r5, #00h
+	ldl r5, #FBh ; q <= 251
+	ldh r6, #00h
+	ldl r6, #06h ; a <= 6
+	jsrd #verifica_num_alet
+	addi r3, #1 ; incrementa o numero aleatorio
+	jsrd #exp_mod ; resposta retornada em r7 => magicNumberFromProcessor
+	ldh r4, #magicNumberFromProcessor
+	ldl r4, #magicNumberFromProcessor
+	st r7, r4, r0 ; magicNumberFromProcessor <= r7
+; magicNumber do processador em r7
+	ld r4, r1, r0
+	or r4, r4, r13 ; seta o bit para o tristate
+	st r4, r1, r0 
+
+	ld r4, r2, r0 ; r4 <= PortConfig
+	and r4, r4, r11 ; r4 <= Porta vira saida
+	st r4, r2, r0 ; PortA(7:0) => saida
+	
+	or r5, r7, r13 ; seta o magicNumber e o bit do tristate
+	or r5, r5, r12 ; seta ack
+	st r5, r1, r0 ; PortData <= MagicNumber + ack + tristate_signal
+	xor r5, r5, r12 ; desativa o ack
+	st r5, r1, r0 ; desativa o ack
+	
+	ld r4, r2, r0 ; r4 <= PortConfig
+	or r4, r10, r4 ; 
+	st r4, r2, r0 ; Port(7:0) => entrada
+	xor r4, r4, r4 ;
+	st r4, r1, r0 ; desativa o tristate
+	rts
+	
+testa_crypto:
+	and r8, r8, r10 ; BITS do magic number do Crypto
+	ldh r4, #magicNumberFromCrypto
+	ldl r4, #magicNumberFromCrypto
+	st r8, r4, r0 ; magicNumberFromCrypto1 <= magicNumberFromCrypto1
+	jsrd #calcula_magic_number
+	rts
+	
+calcula_chave:
+	ldh r4, #magicNumberFromCrypto
+	ldl r4, #magicNumberFromCrypto
+	ld r6, r4, r0 ; r6 <= MagicNumber do crypto A
+	ldh r5, #00h
+	ldl r5, #FBh ; r5 <= q (251)
+	jsrd #exp_mod ; chave em r7
+	ldh r4, #chave
+	ldl r4, #chave
+	st r7, #chave
+	rts
+
+le_caractere_crypto:
+	ld r4, r1, r0 ; r4 <= PortData_A
+	and r5, r14, r4
+	JMPZD #le_caractere_crypto ; pooling enquanto o caractere nao esta pronto
+	or r5, r4, r12 ;
+	st r5, r1, r0 ; pulso em ack
+	xor r5, r5, r12 ;
+	st r5, r1, r0 ; limpa o ack
+	and r8, r4, r10 ; limpa a parte alta de PortDataA
+	xor r8, r7, r8 ; descriptografa a mensagem
+	ldh r5, #buffer
+	ldl r5, #buffer
+	st r8, r5, r0 ; buffer <= mensagem descriptografada
+	rts
+	
+move_data_up_crypto:
+	ldh r5, #buffer
+	ldl r5, #buffer
+	ld r8, r5, r0
+	jsrd #move_high ; r8 <= caractere (parte alta)
+	st r8, r5, r0
+	rts
+	
 .endcode
 
 ; Data area (variables)
@@ -397,9 +406,11 @@ reinicia_numero:
 	address_PortData_B: db #00h
 	address_PortConfig_A: db #00h
 	address_PortConfig_B: db #00h
+	buffer: db #00h
+	random_number: db #00h
+	chave: db #00h
 	magicNumberFromProcessor: db #00h
-	magicNumberFromCrypto1: db #00h
-	magicNumberFromCrypto2: db #00h
+	magicNumberFromCrypto: db #00h
 	msg_c1: db #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h
     msg_c2: db #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h, #00h
 .enddata
